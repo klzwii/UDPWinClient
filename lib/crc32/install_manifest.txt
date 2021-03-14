@@ -1,0 +1,6 @@
+/usr/local/lib/libcrc32c.a
+/usr/local/include/crc32c/crc32c.h
+/usr/local/lib/cmake/Crc32c/Crc32cTargets.cmake
+/usr/local/lib/cmake/Crc32c/Crc32cTargets-noconfig.cmake
+/usr/local/lib/cmake/Crc32c/Crc32cConfig.cmake
+/usr/local/lib/cmake/Crc32c/Crc32cConfigVersion.cmake

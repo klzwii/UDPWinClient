@@ -1,0 +1,40 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/usr/lib/crc32c/src/./crc32c_arm64.h
+cstddef
+-
+cstdint
+-
+crc32c/crc32c_config.h
+/usr/lib/crc32c/src/./crc32c/crc32c_config.h
+
+/usr/lib/crc32c/src/./crc32c_internal.h
+cstddef
+-
+cstdint
+-
+
+/usr/lib/crc32c/src/crc32c_arm64.cc
+./crc32c_arm64.h
+/usr/lib/crc32c/src/./crc32c_arm64.h
+cstddef
+-
+cstdint
+-
+./crc32c_internal.h
+/usr/lib/crc32c/src/./crc32c_internal.h
+crc32c/crc32c_config.h
+/usr/lib/crc32c/src/crc32c/crc32c_config.h
+arm_acle.h
+-
+arm_neon.h
+-
+
+include/crc32c/crc32c_config.h
+
