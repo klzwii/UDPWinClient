@@ -4,4 +4,4 @@ include_directories(${PROJECT_SOURCE_DIR}/lib/crc32/include)
 link_libraries(${PROJECT_SOURCE_DIR}/lib/crc32/libcrc32c.a)
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(UDPWinClient main.cpp RSHelper.cpp RSHelper.h SimpleWorkQueue/SimpleWorker.h SimpleWorkQueue/SimpleTask.h SimpleWorkQueue/SimpleWorkQueue.cpp SimpleWorkQueue/SimpleWorkQueue.h PackageProcessor/PackageProcessWorker.cpp PackageProcessor/PackageProcessWorker.h PackageProcessor/PackageProcessTask.cpp PackageProcessor/PackageProcessTask.h packetConst.h)
+add_executable(UDPWinClient main.cpp RSHelper.cpp RSHelper.h SimpleWorkQueue/SimpleWorker.h SimpleWorkQueue/SimpleTask.h SimpleWorkQueue/SimpleWorkQueue.cpp SimpleWorkQueue/SimpleWorkQueue.h PackageProcessor/PackageProcessWorker.cpp PackageProcessor/PackageProcessWorker.h PackageProcessor/PackageProcessTask.cpp PackageProcessor/PackageProcessTask.h HeaderConst.h ReliableDataTransfer.h)
