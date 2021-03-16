@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.13)
 project(UDPWinClient)
 include_directories(${PROJECT_SOURCE_DIR}/lib/crc32/include)
 link_libraries(${PROJECT_SOURCE_DIR}/lib/crc32/libcrc32c.a)

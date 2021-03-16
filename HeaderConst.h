@@ -13,7 +13,7 @@ private:
     static const uint8_t RST = 0b1000;
 //    uint32_t crc;  // 4
 //    uint16_t sendSeq; // 6
-//    uint16_t ackSeq; // 8
+//    uint16_t SendWindowStart; // 8
 //    uint16_t packetLength; // 10
 //    uint8_t subSeq; // 11
 //    uint8_t symbol; // 12
@@ -52,12 +52,11 @@ public:
     void SetHeadStart(uint16_t headStart) {
         *reinterpret_cast<uint16_t*>(addr + 14) = headStart;
     }
-    void SetFIN(bool isSet) {
-        if (isSet) {
-            *reinterpret_cast<uint8_t*>(addr + 11) |= FIN;
-        } else {
-            *reinterpret_cast<uint8_t*>(addr + 11) &= ~FIN;
-        }
+    void SetFIN() {
+        *reinterpret_cast<uint8_t*>(addr + 11) |= FIN;
+    }
+    void SetACK() {
+        *reinterpret_cast<uint8_t*>(addr + 11) |= ACK;
     }
     uint32_t CRC() {
         return *reinterpret_cast<uint32_t*>(addr);
@@ -85,6 +84,9 @@ public:
     }
     bool IsFin() {
         return *reinterpret_cast<uint8_t*>(addr + 11) & FIN;
+    }
+    bool IsACK() {
+        return *reinterpret_cast<uint8_t*>(addr + 11) & ACK;
     }
 };
 
