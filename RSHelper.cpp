@@ -11,6 +11,17 @@ int RSHelper::num2field[gwSize] = {1, 2, 4, 8, 16, 32, 64, 128, 29, 58, 116, 232
 //G(2^8) num2log
 int RSHelper::field2num[gwSize] = {0, 255, 1, 25, 2, 50, 26, 198, 3, 223, 51, 238, 27, 104, 199, 75, 4, 100, 224, 14, 52, 141, 239, 129, 28, 193, 105, 248, 200, 8, 76, 113, 5, 138, 101, 47, 225, 36, 15, 33, 53, 147, 142, 218, 240, 18, 130, 69, 29, 181, 194, 125, 106, 39, 249, 185, 201, 154, 9, 120, 77, 228, 114, 166, 6, 191, 139, 98, 102, 221, 48, 253, 226, 152, 37, 179, 16, 145, 34, 136, 54, 208, 148, 206, 143, 150, 219, 189, 241, 210, 19, 92, 131, 56, 70, 64, 30, 66, 182, 163, 195, 72, 126, 110, 107, 58, 40, 84, 250, 133, 186, 61, 202, 94, 155, 159, 10, 21, 121, 43, 78, 212, 229, 172, 115, 243, 167, 87, 7, 112, 192, 247, 140, 128, 99, 13, 103, 74, 222, 237, 49, 197, 254, 24, 227, 165, 153, 119, 38, 184, 180, 124, 17, 68, 146, 217, 35, 32, 137, 46, 55, 63, 209, 91, 149, 188, 207, 205, 144, 135, 151, 178, 220, 252, 190, 97, 242, 86, 211, 171, 20, 42, 93, 158, 132, 60, 57, 83, 71, 109, 65, 162, 31, 45, 67, 216, 183, 123, 164, 118, 196, 23, 73, 236, 127, 12, 111, 246, 108, 161, 59, 82, 41, 157, 85, 170, 251, 96, 134, 177, 187, 204, 62, 90, 203, 89, 95, 176, 156, 169, 160, 81, 11, 245, 22, 235, 122, 117, 44, 215, 79, 174, 213, 233, 230, 231, 173, 232, 116, 214, 244, 234, 168, 80, 88, 175};
 
+int RSHelper::multiTable[gwSize][gwSize];
+
+static inline int modnn(int x)
+{
+    while (x >= 255) {
+        x -= 255;
+        x = (x >> 8) + (x & 255);
+    }
+    return x;
+}
+
 void RSHelper::generateGeneratorPolynomial(int polynomialLength) {
     memset(generatorPolynomial, 0, sizeof(generatorPolynomial));
     generatorPolynomial[0] = field2num[1];
@@ -91,9 +102,8 @@ bool RSHelper::getOriginMessage(uint8_t** packets, int originalLength, int rsLen
             if (word == 0) {
                 continue;
             }
-            int tempAlpha = (j * i) + field2num[word];
-            tempAlpha %= (gwSize - 1);
-            tempAns ^= num2field[tempAlpha];
+            int c = modnn(j*i);
+            tempAns ^= multiTable[num2field[c]][word];
         }
         polynomialValue[i] = tempAns;
         isWrong |= tempAns;
@@ -122,10 +132,7 @@ bool RSHelper::getOriginMessage(uint8_t** packets, int originalLength, int rsLen
                             if (!solveMatrix[i][kk]) {
                                 continue;
                             }
-                            int calcAlpha = field2num[solveMatrix[i][kk]] - tempAlpha;
-                            calcAlpha += (gwSize - 1);
-                            calcAlpha %= (gwSize - 1);
-                            solveMatrix[i][kk] = num2field[calcAlpha];
+                            solveMatrix[i][kk] = multiTable[solveMatrix[i][kk]][num2field[255 - tempAlpha]];
                         }
                         for (int kc = k + 1; kc < maxWrongPos; kc++) {
                             int tempBeta = field2num[solveMatrix[kc][j]];
@@ -134,9 +141,7 @@ bool RSHelper::getOriginMessage(uint8_t** packets, int originalLength, int rsLen
                                     if (!solveMatrix[i][kk]) {
                                         continue;
                                     }
-                                    int calcAlpha = field2num[solveMatrix[i][kk]] + tempBeta;
-                                    calcAlpha %= (gwSize - 1);
-                                    solveMatrix[kc][kk] ^= num2field[calcAlpha];
+                                    solveMatrix[kc][kk] ^= multiTable[solveMatrix[i][kk]][num2field[tempBeta]];
                                 }
                             }
                         }
@@ -176,22 +181,17 @@ bool RSHelper::getOriginMessage(uint8_t** packets, int originalLength, int rsLen
         for (int j = i; j <= matrixRank; j++) {
             if (solveMatrix[i][j] == 0)
                 continue;
-            int calcAlpha = field2num[solveMatrix[i][j]] - tempAlpha;
-            calcAlpha += (gwSize - 1);
-            calcAlpha %= (gwSize - 1);
-            solveMatrix[i][j] = num2field[calcAlpha];
+            solveMatrix[i][j] = multiTable[solveMatrix[i][j]][num2field[255 - tempAlpha]];
         }
         for (int j = i + 1; j < matrixRank; j++) {
             if (!solveMatrix[j][i]) {
                 continue;
             }
-            int tempBeta = field2num[solveMatrix[j][i]];
+            int tempBeta = solveMatrix[j][i];
             for (int k = i; k <= matrixRank; k++) {
                 int tempFactor = 0;
                 if (solveMatrix[i][k]) {
-                    int calcAlpha = tempBeta + field2num[solveMatrix[i][k]];
-                    calcAlpha %= (gwSize - 1);
-                    tempFactor = num2field[calcAlpha];
+                    tempFactor = multiTable[tempBeta][solveMatrix[i][k]];
                 }
                 solveMatrix[j][k] ^= tempFactor;
             }
@@ -206,11 +206,8 @@ bool RSHelper::getOriginMessage(uint8_t** packets, int originalLength, int rsLen
                 solveMatrix[j][i] = 0;
                 continue;
             }
-            int tempAlpha = field2num[solveMatrix[j][i]];
+            solveMatrix[j][matrixRank] ^= multiTable[solveMatrix[i][matrixRank]][solveMatrix[j][i]];
             solveMatrix[j][i] = 0;
-            int calcAlpha = field2num[solveMatrix[i][matrixRank]] + tempAlpha;
-            calcAlpha %= (gwSize - 1);
-            solveMatrix[j][matrixRank] ^= num2field[calcAlpha];
         }
     }
     int gaussAns[(gwSize >> 1) + 1];
@@ -227,10 +224,8 @@ bool RSHelper::getOriginMessage(uint8_t** packets, int originalLength, int rsLen
                 continue;
             }
             int tempFactor = field2num[gaussAns[matrixRank - j - 1]];
-            tempFactor -= i * (j + 1);
-            tempFactor %= (gwSize - 1);
-            tempFactor += (gwSize - 1);
-            tempFactor %= (gwSize - 1);
+            tempFactor -= modnn(i * (j + 1));
+            tempFactor = modnn(tempFactor + 255);
             calcAns ^= num2field[tempFactor];
         }
         if (!calcAns) {
@@ -246,7 +241,7 @@ bool RSHelper::getOriginMessage(uint8_t** packets, int originalLength, int rsLen
     for (int i = 0; i < sumWrongPos; i++) {
         for (int j = 0; j < sumWrongPos; j++) {
             //std::cout << wrongPos[j] << " " << i << " " << j << std::endl;
-            solveMatrix[i][j] = num2field[(wrongPos[j] * i) % (gwSize - 1)];
+            solveMatrix[i][j] = num2field[modnn(wrongPos[j] * i)];
         }
         solveMatrix[i][sumWrongPos] = polynomialValue[i];
     }
@@ -264,22 +259,17 @@ bool RSHelper::getOriginMessage(uint8_t** packets, int originalLength, int rsLen
         for (int j = i; j <= matrixRank; j++) {
             if (solveMatrix[i][j] == 0)
                 continue;
-            int calcAlpha = field2num[solveMatrix[i][j]] - tempAlpha;
-            calcAlpha += (gwSize - 1);
-            calcAlpha %= (gwSize - 1);
-            solveMatrix[i][j] = num2field[calcAlpha];
+            solveMatrix[i][j] = multiTable[solveMatrix[i][j]][num2field[255 - tempAlpha]];
         }
         for (int j = i + 1; j < matrixRank; j++) {
             if (!solveMatrix[j][i]) {
                 continue;
             }
-            int tempBeta = field2num[solveMatrix[j][i]];
+            int tempBeta = solveMatrix[j][i];
             for (int k = i; k <= matrixRank; k++) {
                 int tempFactor = 0;
                 if (solveMatrix[i][k]) {
-                    int calcAlpha = tempBeta + field2num[solveMatrix[i][k]];
-                    calcAlpha %= (gwSize - 1);
-                    tempFactor = num2field[calcAlpha];
+                    tempFactor = multiTable[tempBeta][solveMatrix[i][k]];
                 }
                 solveMatrix[j][k] ^= tempFactor;
             }
@@ -294,11 +284,8 @@ bool RSHelper::getOriginMessage(uint8_t** packets, int originalLength, int rsLen
                 solveMatrix[j][i] = 0;
                 continue;
             }
-            int tempAlpha = field2num[solveMatrix[j][i]];
+            solveMatrix[j][matrixRank] ^= multiTable[solveMatrix[j][i]][solveMatrix[i][matrixRank]];
             solveMatrix[j][i] = 0;
-            int calcAlpha = field2num[solveMatrix[i][matrixRank]] + tempAlpha;
-            calcAlpha %= (gwSize - 1);
-            solveMatrix[j][matrixRank] ^= num2field[calcAlpha];
         }
     }
 
@@ -316,12 +303,21 @@ bool RSHelper::getOriginMessage(uint8_t** packets, int originalLength, int rsLen
             if (word == 0) {
                 continue;
             }
-            int tempAlpha = (j * i) + field2num[word];
-            tempAlpha %= (gwSize - 1);
-            tempAns ^= num2field[tempAlpha];
+            tempAns ^= multiTable[num2field[modnn(j * i)]][word];
         }
         polynomialValue[i] = tempAns;
         isWrong |= tempAns;
     }
     return !isWrong;
+}
+
+void RSHelper::init() {
+    memset(multiTable, 0, sizeof(multiTable));
+    for (int i = 0; i < gwSize; i ++) {
+        for (int j = 0; j < gwSize; j ++) {
+            auto p = field2num[i] + field2num[j];
+            p %= (gwSize - 1);
+            multiTable[i][j] = num2field[p];
+        }
+    }
 }

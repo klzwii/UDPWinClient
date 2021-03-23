@@ -15,16 +15,15 @@
 #define PACKET_SIZE 1000
 #define RS_LENGTH 2
 
-void RDT(int fd, const sockaddr * sendAddr);
-
 std::atomic_bool started;
 int main() {
+    srand(time(nullptr));
     finished.store(false);
     started.store(false);
     int totalPackets = 0;
     auto  k = new RSHelper();
     FILE *fp;
-    if (!(fp = fopen("D:\\chap1.pdf", "rb"))) {
+    if (!(fp = fopen("/mnt/d/chap1.pdf", "rb"))) {
         perror("open file");
     }
     auto start = time(nullptr);
@@ -68,5 +67,7 @@ int main() {
     if (ferror(fp)) {
         perror("read file");
     }
-    std::this_thread::sleep_for(std::chrono::seconds(30));
+    while (!closed.load()) {
+        std::this_thread::yield();
+    }
 }

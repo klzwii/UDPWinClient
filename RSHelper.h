@@ -11,6 +11,7 @@ class RSHelper {
 private:
     static int num2field[gwSize];
     static int field2num[gwSize];
+    static int multiTable[gwSize][gwSize];
     int generatorPolynomial[gwSize + 1];
     int generatorPolynomialTemp[gwSize + 1];
     int currentRSCodeLength;
@@ -20,6 +21,8 @@ private:
     bool getOriginMessage(uint8_t **packets, int originalLength, int rsLength, int offset, int batchLength);
 
 public:
+
+    static void init();
 
     void GenerateRSPacket(uint8_t **packets, int originalLength, int rsLength, size_t packetSize);
 

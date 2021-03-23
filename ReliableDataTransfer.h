@@ -9,11 +9,12 @@
 #include <thread>
 #include <sys/time.h>
 #include "RSHelper.h"
-#define WINDOW_SIZE 100
+#define WINDOW_SIZE 128
 #define BATCH_LENGTH 5
 #define PACKET_SIZE 1000
-#define RS_LENGTH 2
+#define RS_LENGTH 4
 #define RESEND_THRESHOLD 700
+#define PACKET_LOSS 10
 
 static std::atomic_uint16_t SendWindowEnd;
 static std::atomic_bool finished;
@@ -23,6 +24,7 @@ static uint8_t **sendBuffers;
 static std::atomic_uint8_t ack[WINDOW_SIZE];
 static std::atomic_bool finish[WINDOW_SIZE];
 static int UDPSock;
+static std::atomic_bool closed;
 static struct sockaddr_in sSendAddr{};
 static timeval sendTime[WINDOW_SIZE];
 FILE *file;
@@ -30,6 +32,7 @@ FILE *file;
 void RDT();
 
 void init() {
+    closed.store(false);
     memset(ack, 0, sizeof(ack));
     memset(finish, 0, sizeof(finish));
     memset(sendTime, 0, sizeof(sendTime));
@@ -118,7 +121,7 @@ uint8_t* GetBuffer(uint16_t seq) {
 }
 
 void sendBuffer(const uint16_t &seqNumber) {
-    //std::cout << "send buffer" << seqNumber << std::endl;
+    std::cout << "send buffer" << seqNumber << std::endl;
     auto pos = seqNumber % WINDOW_SIZE;
     const auto &buffer = sendBuffers[pos];
     auto head = header(buffer);
@@ -128,6 +131,10 @@ void sendBuffer(const uint16_t &seqNumber) {
     }
     uint8_t totalLength = head.RSSeq() + head.RealSeq();
     for (int i = 0; i < totalLength; i ++) {
+        auto t = rand() % 100;
+        if (t < PACKET_LOSS) {
+            continue;
+        }
         sendto(UDPSock, buffer + i * sendSize, sendSize, 0,
                reinterpret_cast<const sockaddr *>(&sSendAddr), sizeof(sockaddr_in));
     }
@@ -162,10 +169,8 @@ void DealBuffer(const uint16_t &seqNumber, RSHelper *k, const uint16_t &packetLe
         p[i + RS_LENGTH] = buffer + i * totalLength + HEADER_LENGTH;
     }
     k->GenerateRSPacket(p, realLength, RS_LENGTH, PACKET_SIZE);
-    uint8_t testBuffer[10000];
     for (int i = 0; i < realLength + RS_LENGTH; i ++) {
         auto startAddr = buffer + i * totalLength;
-        memcpy(testBuffer + i * PACKET_SIZE, startAddr + HEADER_LENGTH, PACKET_SIZE);
         header head = header(startAddr);
         head.Clear();
         head.SetRealSeq(realLength);
@@ -200,6 +205,7 @@ void RDT() {
             recvfrom(UDPSock, buffer, 10000, 0, reinterpret_cast<sockaddr *>(&clientADDR), &clientADDRLen);
             if (head.IsFin()) {
                 std::cout << "client end" << std::endl;
+                closed.store(true);
                 break;
             }
             if (head.IsACK()) {
@@ -213,10 +219,13 @@ void RDT() {
         uint16_t winStart = SendWindowStart.load(), winEnd = SendWindowEnd.load();
         timeval curTime{};
         gettimeofday(&curTime, nullptr);
-        auto diff = (curTime.tv_sec - sendTime[winStart % WINDOW_SIZE].tv_sec) * 1000 + (curTime.tv_usec - sendTime[winStart % WINDOW_SIZE].tv_usec) / 1000;
-        if (winStart != winEnd && diff > RESEND_THRESHOLD) {
-            //std::cout << "resend: " << winStart << std::endl;
-            sendBuffer(winStart);
+        for (uint16_t k = winStart; k != winEnd; k ++) {
+            auto diff = (curTime.tv_sec - sendTime[k % WINDOW_SIZE].tv_sec) * 1000 + (curTime.tv_usec - sendTime[k % WINDOW_SIZE].tv_usec) / 1000;
+            if (winStart != winEnd && diff > RESEND_THRESHOLD) {
+                sendBuffer(winStart);
+            } else {
+                break;
+            }
         }
     }
 }
