@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="UDPWinClient"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="msvc8"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="C:/Users/liuze/CLionProjects/UDPWinClient/cmake-build-relwithdebinfo"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 all"/>
+					<CompileFile command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="UDPWinClient">
+				<Option output="C:/Users/liuze/CLionProjects/UDPWinClient/cmake-build-relwithdebinfo/UDPWinClient.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="C:/Users/liuze/CLionProjects/UDPWinClient/cmake-build-relwithdebinfo"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add directory="C:/Users/liuze/CLionProjects/UDPWinClient/lib/crc32/include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.16.27023\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.16.27023\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 UDPWinClient"/>
+					<CompileFile command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="UDPWinClient/fast">
+				<Option output="C:/Users/liuze/CLionProjects/UDPWinClient/cmake-build-relwithdebinfo/UDPWinClient.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="C:/Users/liuze/CLionProjects/UDPWinClient/cmake-build-relwithdebinfo"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add directory="C:/Users/liuze/CLionProjects/UDPWinClient/lib/crc32/include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.16.27023\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.16.27023\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 UDPWinClient/fast"/>
+					<CompileFile command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="C:/Users/liuze/CLionProjects/UDPWinClient/cmake-build-relwithdebinfo"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 edit_cache"/>
+					<CompileFile command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="C:/Users/liuze/CLionProjects/UDPWinClient/cmake-build-relwithdebinfo"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f C:\Users\liuze\CLionProjects\UDPWinClient\cmake-build-relwithdebinfo\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/HeaderConst.h">
+			<Option target="UDPWinClient"/>
+		</Unit>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/PackageProcessor/PackageProcessTask.cpp">
+			<Option target="UDPWinClient"/>
+		</Unit>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/PackageProcessor/PackageProcessTask.h">
+			<Option target="UDPWinClient"/>
+		</Unit>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/PackageProcessor/PackageProcessWorker.cpp">
+			<Option target="UDPWinClient"/>
+		</Unit>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/PackageProcessor/PackageProcessWorker.h">
+			<Option target="UDPWinClient"/>
+		</Unit>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/RSHelper.cpp">
+			<Option target="UDPWinClient"/>
+		</Unit>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/RSHelper.h">
+			<Option target="UDPWinClient"/>
+		</Unit>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/ReliableDataTransfer.h">
+			<Option target="UDPWinClient"/>
+		</Unit>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/SimpleWorkQueue/SimpleTask.h">
+			<Option target="UDPWinClient"/>
+		</Unit>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/SimpleWorkQueue/SimpleWorkQueue.cpp">
+			<Option target="UDPWinClient"/>
+		</Unit>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/SimpleWorkQueue/SimpleWorkQueue.h">
+			<Option target="UDPWinClient"/>
+		</Unit>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/SimpleWorkQueue/SimpleWorker.h">
+			<Option target="UDPWinClient"/>
+		</Unit>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/main.cpp">
+			<Option target="UDPWinClient"/>
+		</Unit>
+		<Unit filename="C:/Users/liuze/CLionProjects/UDPWinClient/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

@@ -3,3 +3,5 @@
 /.idea
 /cmake-build-debug-wsl/
 /cmake-build-release-wsl/
+/cmake-build-debug-remote-host-1/
+/cmake-build-release-remote-host-1

@@ -13,8 +13,12 @@
 #define BATCH_LENGTH 5
 #define PACKET_SIZE 1000
 #define RS_LENGTH 4
+#define TRY_RECOVER_THRESHOLD 2
+#define THREAD_NUM 8
 #define RESEND_THRESHOLD 700
 #define PACKET_LOSS 10
+
+
 
 static std::atomic_uint16_t SendWindowEnd;
 static std::atomic_bool finished;

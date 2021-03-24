@@ -11,9 +11,6 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
-#define BATCH_LENGTH 5
-#define PACKET_SIZE 1000
-#define RS_LENGTH 2
 
 std::atomic_bool started;
 int main() {

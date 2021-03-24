@@ -1,0 +1,3 @@
+C:/Users/liuze/CLionProjects/UDPWinClient/cmake-build-relwithdebinfo/CMakeFiles/UDPWinClient.dir
+C:/Users/liuze/CLionProjects/UDPWinClient/cmake-build-relwithdebinfo/CMakeFiles/edit_cache.dir
+C:/Users/liuze/CLionProjects/UDPWinClient/cmake-build-relwithdebinfo/CMakeFiles/rebuild_cache.dir
