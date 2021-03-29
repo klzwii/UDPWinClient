@@ -20,13 +20,20 @@
 
 
 
+static std::atomic_uint16_t recvEnd;
+static std::atomic_uint16_t recvStart;
 static std::atomic_uint16_t SendWindowEnd;
 static std::atomic_bool finished;
 static std::atomic_uint16_t SendWindowStart;
 static uint8_t **buffers;
 static uint8_t **sendBuffers;
-static std::atomic_uint8_t ack[WINDOW_SIZE];
-static std::atomic_bool finish[WINDOW_SIZE];
+static std::atomic_uint16_t ack[WINDOW_SIZE];
+static std::atomic_uint8_t realLength[WINDOW_SIZE];
+static std::atomic_uint16_t packetLengths[WINDOW_SIZE];
+static bool finish[WINDOW_SIZE];
+static std::atomic_uint16_t wg;
+static timeval recvTime[WINDOW_SIZE];
+static RSHelper* helpers[WINDOW_SIZE];
 static int UDPSock;
 static std::atomic_bool closed;
 static struct sockaddr_in sSendAddr{};
