@@ -148,7 +148,6 @@ void readFromFD() {
 }
 
 int main() {
-    getSubnetMask();
     fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (fd < 0) {
         perror("open socket");

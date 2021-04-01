@@ -43,6 +43,9 @@ FILE *file;
 void RDT();
 
 void init() {
+    for (int i = 0; i < THREAD_NUM; i ++) {
+        helpers[i] = new RSHelper();
+    }
     closed.store(false);
     memset(ack, 0, sizeof(ack));
     memset(finish, 0, sizeof(finish));
