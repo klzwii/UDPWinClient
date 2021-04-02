@@ -135,7 +135,6 @@ uint8_t* GetBuffer(uint16_t seq) {
 }
 
 void sendBuffer(const uint16_t &seqNumber) {
-    std::cout << "send buffer" << seqNumber << std::endl;
     auto pos = seqNumber % WINDOW_SIZE;
     const auto &buffer = sendBuffers[pos];
     auto head = header(buffer);
