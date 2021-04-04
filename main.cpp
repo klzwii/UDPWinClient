@@ -10,18 +10,11 @@
 #include <thread>
 #include <sys/socket.h>
 #include <libnetfilter_queue/libnetfilter_queue.h>
+#include "RDT.h"
 #include <libnetfilter_queue/libnetfilter_queue_ipv4.h>
 #include <linux/netfilter.h>
-struct sockaddr_in sin{}, sout{};
-
-void printIP(uint32_t netIP) {
-    auto hostIP = be32toh(netIP);
-    auto *k = (uint8_t*)&netIP;
-    for (int i = 0; i <= 3; i ++) {
-        printf("%d.", (int)*(k+i));
-    }
-    printf("\n");
-}
+struct sockaddr_in sockaddrIn{}, sout{};
+RDT *rdt;
 
 int fd;
 
@@ -70,81 +63,11 @@ int cb(struct nfq_q_handle *gh, struct nfgenmsg *nfmsg, struct nfq_data *nfad, v
                     break;
             }
             printf("get %s packets, length %d\n", s.c_str(), r);
-            printIP(iph->saddr);
-            printIP(iph->daddr);
-            send(fd, payload, r, 0);
+            rdt->AddData(payload, r);
             nfq_set_verdict(gh, id, NF_DROP, 0, nullptr);
         }
     }
     return 0;
-}
-
-int getSubnetMask()
-{
-    struct sockaddr_in *sin = NULL;
-
-    struct ifaddrs *ifa = NULL, *ifList;
-
-    if (getifaddrs(&ifList) < 0)
-    {
-        return -1;
-    }
-
-    for (ifa = ifList; ifa != NULL; ifa = ifa->ifa_next)
-    {
-        if(ifa->ifa_addr->sa_family == AF_INET)
-        {
-            printf("n>>> interfaceName: %s\n", ifa->ifa_name);
-
-            sin = (struct sockaddr_in *)ifa->ifa_addr;
-            printf(">>> ipAddress: %s\n", inet_ntoa(sin->sin_addr));
-
-            sin = (struct sockaddr_in *)ifa->ifa_dstaddr;
-            printf(">>> broadcast: %s\n", inet_ntoa(sin->sin_addr));
-
-            sin = (struct sockaddr_in *)ifa->ifa_netmask;
-            printf(">>> subnetMask: %s\n", inet_ntoa(sin->sin_addr));
-        }
-    }
-
-    freeifaddrs(ifList);
-    return 0;
-}
-
-void reCalcChecksum(uint16_t *buffer, size_t len) {
-    auto *iph = (iphdr*)buffer;
-    iph->check = 0;
-    uint32_t cksum = 0;
-    while(len)
-    {
-        cksum += *(buffer++);
-        len -= 2;
-    }
-    while (cksum >> 16) {
-        uint16_t t = cksum >> 16;
-        cksum &= 0x0000ffff;
-        cksum += t;
-    }
-    iph->check = ~cksum;
-}
-
-void readFromFD() {
-    int buffer[2000];
-    int len;
-    int rawFD = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
-    struct sockaddr_in t{};
-    t.sin_family = AF_INET;
-    t.sin_addr.s_addr = inet_addr("192.168.72.129");
-    while ((len = recv(fd, buffer, 2000, 0)) > 0) {
-        printf("get packets len %d\n", len);
-        auto *iph = (iphdr*)buffer;
-        iph->daddr = inet_addr("192.168.72.129");
-        reCalcChecksum((uint16_t*)buffer, len);
-        sendto(rawFD, buffer, len, 0, (sockaddr*)&t, sizeof(sockaddr_in));
-    }
-    if (len < 0) {
-        perror("recv");
-    }
 }
 
 int main() {
@@ -153,9 +76,10 @@ int main() {
         perror("open socket");
         exit(0);
     }
-    sin.sin_port = htons(1234);
-    sin.sin_addr.s_addr = inet_addr("159.75.92.163");
-    sin.sin_family = AF_INET;
+    sockaddrIn.sin_port = htons(1234);
+    sockaddrIn.sin_addr.s_addr = inet_addr("159.75.92.163");
+    sockaddrIn.sin_family = AF_INET;
+    rdt = new RDT(8, 5, 200, 2, inet_addr("159.75.92.163"), htons(1234), 10, 2000, 10, inet_addr("192.168.72.129"));
     sout.sin_addr.s_addr = htonl(INADDR_ANY);
     sout.sin_family = AF_INET;
     sout.sin_port = htons(0);
@@ -164,7 +88,7 @@ int main() {
         perror("bind");
         exit(0);
     }
-    c = connect(fd, (sockaddr *)&sin, sizeof(struct sockaddr_in));
+    c = connect(fd, (sockaddr *)&sockaddrIn, sizeof(struct sockaddr_in));
     if (c < 0) {
         perror("connect");
         exit(0);
@@ -202,16 +126,15 @@ int main() {
     fd_set oriFD;
     FD_ZERO(&oriFD);
     FD_SET(queueFD, &oriFD);
-    timeval tv{1, 0};
-    std::thread(readFromFD).detach();
+    timeval tv{0, 10000};
+   // std::thread(readFromFD).detach();
     while(true) {
         auto fdCopy = oriFD;
         auto tvCopy = tv;
-        auto c = select(queueFD + 1, &fdCopy, nullptr, nullptr, &tvCopy);
-        if (c == 0) {
-            continue;
-        }
-        if (FD_ISSET(queueFD, &fdCopy)) {
+        auto selectedFD = select(queueFD + 1, &fdCopy, nullptr, nullptr, &tvCopy);
+        if (selectedFD == 0) {
+            rdt->BufferTimeOut();
+        } else if (FD_ISSET(queueFD, &fdCopy)) {
             r = recv(queueFD, buf, sizeof(buf), MSG_DONTWAIT);
             if (r == 0) {
                 printf("recv return 0. exit");

@@ -7,4 +7,4 @@ set(CMAKE_CXX_FLAGS "-pthread -l netfilter_queue")
 
 INCLUDE(FindPkgConfig)
 
-add_executable(UDPWinClient main.cpp RSHelper.cpp RSHelper.h SimpleWorkQueue/SimpleWorker.h SimpleWorkQueue/SimpleTask.h SimpleWorkQueue/SimpleWorkQueue.cpp SimpleWorkQueue/SimpleWorkQueue.h PackageProcessor/PackageProcessWorker.cpp PackageProcessor/PackageProcessWorker.h PackageProcessor/PackageProcessTask.cpp PackageProcessor/PackageProcessTask.h HeaderConst.h ReliableDataTransfer.h RDT.cpp RDT.h)
+add_executable(UDPWinClient main.cpp RSHelper.cpp RSHelper.h SimpleWorkQueue/SimpleWorker.h SimpleWorkQueue/SimpleTask.h SimpleWorkQueue/SimpleWorkQueue.cpp SimpleWorkQueue/SimpleWorkQueue.h PackageProcessor/PackageProcessWorker.cpp PackageProcessor/PackageProcessWorker.h PackageProcessor/PackageProcessTask.cpp PackageProcessor/PackageProcessTask.h HeaderConst.h RDT.cpp RDT.h)
