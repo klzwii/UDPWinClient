@@ -39,7 +39,7 @@ void RDT::reCalcChecksum(uint16_t *payLoad, size_t len) {
 }
 
 // non thread safe
-void RDT::SendBuffer(uint8_t *data, uint16_t length) {
+void RDT::SendBuffer() {
     uint16_t curSeq = SendWindowEnd;
     while ((uint16_t)(curSeq - SendWindowStart.load()) >= WINDOW_SIZE) {
         std::this_thread::yield();
@@ -51,7 +51,7 @@ void RDT::SendBuffer(uint8_t *data, uint16_t length) {
         p[i] = currentBuffer + (i + BATCH_LENGTH) * SEGMENT_LENGTH + HEADER_LENGTH;
     }
     for (int i = 0; i < BATCH_LENGTH; i ++) {
-        memcpy(currentBuffer + i * SEGMENT_LENGTH + HEADER_LENGTH, data + i * PACKET_SIZE, PACKET_SIZE);
+        memcpy(currentBuffer + i * SEGMENT_LENGTH + HEADER_LENGTH, buffer + i * PACKET_SIZE, PACKET_SIZE);
         p[i + RS_LENGTH] = currentBuffer + i * SEGMENT_LENGTH + HEADER_LENGTH;
     }
     if (RS_LENGTH != 0) {
@@ -59,12 +59,13 @@ void RDT::SendBuffer(uint8_t *data, uint16_t length) {
     }
     for (int i = 0; i < RS_LENGTH + BATCH_LENGTH; i ++) {
         auto head = header(currentBuffer + i * SEGMENT_LENGTH);
-        head.SetPacketLength(length);
+        head.SetPacketLength(offset);
         head.SetRealSeq(BATCH_LENGTH);
         head.SetSendSeq(SendWindowEnd);
         head.SetRSSeq(RS_LENGTH);
         head.SetSubSeq(i);
         head.SetACK();
+        head.SetHeadStart(firstHead);
         head.SetCRC(crc32c::Crc32c(currentBuffer + i * SEGMENT_LENGTH + 4, SEGMENT_LENGTH - 4));
     }
     sendBufferBySeq(SendWindowEnd);
@@ -113,6 +114,8 @@ void RDT::RecvBuffer(uint8_t *data) {
     }
     if (!ack[pos]) {
         PacketLength[pos] = head.PacketLength();
+        FirstHeader[pos] = head.HeadStart();
+        std::cout << "first head " << pos << " " << head.SendSeq() << " " << FirstHeader[pos] << std::endl;
     }
     ack[pos] |= (1 << head.SubSeq());
     gettimeofday(&recvTime[pos], nullptr);
@@ -245,37 +248,27 @@ bool RDT::DumpData() {
         auto pos = i % WINDOW_SIZE;
         if (finish[pos]) {
             flg = true;
-            if (PacketLength[pos] != 0) {
-                if (rawOffset != 0) {
-                    auto *iphdr = reinterpret_cast<struct iphdr*>(rawBuffer);
-                    auto copyLength = std::min(rawOffset, PacketLength[pos]);
-                    memcpy(rawBuffer + be16toh(iphdr->tot_len) - rawOffset, RecvBuffers[pos], copyLength);
-                    rawOffset -= copyLength;
-                } else {
-                    auto *iphdr = reinterpret_cast<struct iphdr*>(RecvBuffers[pos]);
-                    auto copyLength = std::min(be16toh(iphdr->tot_len), PacketLength[pos]);
-                    memcpy(rawBuffer, RecvBuffers[pos], copyLength);
-                    rawOffset = be16toh(iphdr->tot_len) - copyLength;
-                }
-                if (rawOffset == 0) {
-                    auto *iphdr = reinterpret_cast<struct iphdr*>(rawBuffer);
-                    uint16_t sendLength = be16toh(iphdr->tot_len);
-                    sockaddr_in tempSock{};
-#ifdef client
-                    iphdr->daddr = fakeIP;
-#endif
-#ifdef server
-                    iphdr->saddr = fakeIP;
-#endif
-                    tempSock.sin_family = AF_INET;
-                    tempSock.sin_addr.s_addr = iphdr->daddr;
-                    reCalcChecksum((uint16_t*)rawBuffer, sendLength);
-                    auto sendRet = sendto(rawSocket, rawBuffer, sendLength, 0, (sockaddr*)&tempSock, sizeof(sockaddr_in));
-                    if (sendRet < 0) {
-                        perror("send raw");
+            uint16_t packetLength = PacketLength[pos];
+            if (packetLength != 0) {
+                uint16_t recvOffset = 0;
+                uint16_t copyLength = FirstHeader[pos];
+                memcpy(rawBuffer + rawOffset, RecvBuffers[pos], copyLength);
+                rawOffset += copyLength;
+                recvOffset += copyLength;
+                SendRawBuffer();
+                while (recvOffset != packetLength) {
+                    uint16_t dataLeft = packetLength - recvOffset;
+                    if (dataLeft >= sizeof(struct iphdr)) {
+                        auto *hdr = reinterpret_cast<struct iphdr*>(RecvBuffers[pos] + recvOffset);
+                        copyLength = be16toh(hdr->tot_len);
                     }
+                    copyLength = std::min((uint16_t)(packetLength - recvOffset), copyLength);
+                    memcpy(rawBuffer + rawOffset, RecvBuffers[pos] + recvOffset, copyLength);
+                    rawOffset += copyLength;
+                    recvOffset += copyLength;
+                    SendRawBuffer();
                 }
-            };
+            }
             RecvStart = i;
             recvTime[pos] = timeval{0, 0};
             finish[pos] = false;
@@ -287,21 +280,68 @@ bool RDT::DumpData() {
     return flg;
 }
 
-void RDT::AddData(uint8_t *data, size_t length) {
-    size_t copyLength = std::min(PACKET_SIZE - offset, length);
+void printIP(uint32_t netIP) {
+    auto *k = (uint8_t*)&netIP;
+    for (int i = 0; i <= 3; i ++) {
+        printf("%d.", (int)*(k+i));
+    }
+    printf("\n");
+}
+
+void RDT::SendRawBuffer() {
+    if (rawOffset < sizeof(struct iphdr)) {
+        return;
+    }
+    auto *iphdr = reinterpret_cast<struct iphdr*>(rawBuffer);
+    uint16_t sendLength = be16toh(iphdr->tot_len);
+    if (sendLength != rawOffset) {
+        return;
+    }
+    sockaddr_in tempSock{};
+#ifdef client
+    iphdr->daddr = fakeIP;
+#endif
+#ifdef server
+    iphdr->saddr = fakeIP;
+#endif
+    tempSock.sin_family = AF_INET;
+    tempSock.sin_addr.s_addr = iphdr->daddr;
+    if (iphdr->protocol == IPPROTO_TCP) {
+        tempSock.sin_port = *(uint16_t *)(rawBuffer + 4 * (iphdr->ihl) + 2);
+    }
+    std::cout << be16toh(tempSock.sin_port) << std::endl << be16toh(*(uint16_t *)(rawBuffer + 4 * (iphdr->ihl) + 2)) << std::endl;
+    reCalcChecksum((uint16_t*)rawBuffer, sendLength);
+    auto sendRet = sendto(rawSocket, rawBuffer, sendLength, 0, (sockaddr*)&tempSock, sizeof(sockaddr_in));
+    std::cout << "send raw " << sendLength << (int)iphdr->ihl << std::endl;
+    printIP(iphdr->daddr);
+    printIP(iphdr->saddr);
+    if (sendRet < 0) {
+        perror("send raw");
+    }
+    rawOffset = 0;
+}
+
+void RDT::AddData(uint8_t *data, size_t length, bool initial) {
+    size_t copyLength = std::min(DATA_LENGTH - offset, length);
     memcpy(this->buffer + offset, data, copyLength);
     if (offset == 0) {
         gettimeofday(&bufferStartTime, nullptr);
     }
+    if (initial) {
+        if (firstHead > offset) {
+            firstHead = offset;
+        }
+    }
     offset += copyLength;
     length -= copyLength;
     data += copyLength;
-    if (offset == PACKET_SIZE) {
-        SendBuffer(this->buffer, PACKET_SIZE);
+    if (offset == DATA_LENGTH) {
+        SendBuffer();
         offset = 0;
+        firstHead = DATA_LENGTH;
     }
     if (length > 0) {
-        AddData(data, length);
+        AddData(data, length, false);
     }
 }
 
@@ -315,8 +355,12 @@ void RDT::BufferTimeOut() {
     gettimeofday(&curTime, nullptr);
     if (curTime - bufferStartTime > BUFFER_THRESHOLD) {
         std::cout << "buffer time out" << std::endl;
-        SendBuffer(this->buffer, offset);
+        if (firstHead > offset) {
+            firstHead = offset;
+        }
+        SendBuffer();
         offset = 0;
+        firstHead = DATA_LENGTH;
     }
 }
 

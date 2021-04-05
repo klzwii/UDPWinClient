@@ -31,6 +31,7 @@ private:
     uint16_t SendWindowEnd;
     uint16_t uuid = 0;
     uint8_t **sendBuffers;
+    uint16_t firstHead;
     uint8_t rawBuffer[2000]{};
     uint16_t rawOffset = 0;
     RSHelper **helpers;
@@ -50,6 +51,7 @@ private:
     uint PACKET_SIZE;
     uint RS_LENGTH;
     uint SEGMENT_LENGTH;
+    uint DATA_LENGTH;
     uint32_t RESEND_THRESHOLD;
     uint32_t RECOVER_THRESHOLD;
     uint32_t BUFFER_THRESHOLD;
@@ -57,6 +59,7 @@ private:
     in_addr_t fakeIP;
     int rawSocket;
     uint16_t *PacketLength;
+    uint16_t *FirstHeader;
     static void reCalcChecksum(uint16_t *payLoad, size_t len);
 public:
     void sendBufferBySeq(uint16_t seq);
@@ -120,6 +123,7 @@ public:
         this->RECOVER_THRESHOLD = RECOVER_THRESHOLD;
         this->RESEND_THRESHOLD = RESEND_THRESHOLD;
         this->BUFFER_THRESHOLD = BUFFER_THRESHOLD;
+        DATA_LENGTH = PACKET_SIZE * BATCH_LENGTH;
         SEGMENT_LENGTH = PACKET_SIZE + HEADER_LENGTH;
         this->RS_LENGTH = RS_LENGTH;
         this->THREAD_NUM = 4;
@@ -141,9 +145,11 @@ public:
         sendTime = reinterpret_cast<timeval*>(malloc(sizeof(timeval) * WINDOW_SIZE));
         recvTime = reinterpret_cast<timeval*>(malloc(sizeof(timeval) * WINDOW_SIZE));
         finish = reinterpret_cast<bool*>(calloc(WINDOW_SIZE, sizeof(bool)));
-        buffer = reinterpret_cast<uint8_t*>(calloc(PACKET_SIZE, sizeof(uint8_t)));
+        buffer = reinterpret_cast<uint8_t*>(calloc(DATA_LENGTH, sizeof(uint8_t)));
         PacketLength = reinterpret_cast<uint16_t*>(calloc(WINDOW_SIZE, sizeof(uint16_t)));
+        FirstHeader = reinterpret_cast<uint16_t*>(calloc(WINDOW_SIZE, sizeof(uint16_t)));
         rawSocket = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+        firstHead = DATA_LENGTH;
         if (rawSocket < 0) {
             perror("open raw socket");
         }
@@ -170,7 +176,7 @@ public:
 #endif
     };
 
-    void AddData(uint8_t *buffer, size_t length);
+    void AddData(uint8_t *buffer, size_t length, bool initial);
 
     void RecvBuffer(uint8_t *data);
 
@@ -184,7 +190,9 @@ public:
 
     void BufferTimeOut();
 
-    void SendBuffer(uint8_t *data, uint16_t length);
+    void SendBuffer();
+
+    void SendRawBuffer();
 };
 
 #endif

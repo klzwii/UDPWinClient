@@ -61,9 +61,12 @@ int cb(struct nfq_q_handle *gh, struct nfgenmsg *nfmsg, struct nfq_data *nfad, v
                 case IPPROTO_UDP:
                     s = "udp";
                     break;
+                case IPPROTO_TCP:
+                    s = "tcp";
+                    break;
             }
             printf("get %s packets, length %d\n", s.c_str(), r);
-            rdt->AddData(payload, r);
+            rdt->AddData(payload, r, true);
             nfq_set_verdict(gh, id, NF_DROP, 0, nullptr);
         }
     }
@@ -79,7 +82,7 @@ int main() {
     sockaddrIn.sin_port = htons(1234);
     sockaddrIn.sin_addr.s_addr = inet_addr("159.75.92.163");
     sockaddrIn.sin_family = AF_INET;
-    rdt = new RDT(8, 5, 200, 2, inet_addr("159.75.92.163"), htons(1234), 10, 2000, 10, inet_addr("192.168.72.129"));
+    rdt = new RDT(128, 5, 300, 2, inet_addr("159.75.92.163"), htons(1234), 10, 2000, 0, inet_addr("192.168.72.129"));
     sout.sin_addr.s_addr = htonl(INADDR_ANY);
     sout.sin_family = AF_INET;
     sout.sin_port = htons(0);
