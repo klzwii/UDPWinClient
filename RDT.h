@@ -60,8 +60,9 @@ private:
     int rawSocket;
     uint16_t *PacketLength;
     uint16_t *FirstHeader;
-    static void reCalcChecksum(uint16_t *payLoad, size_t len);
+
 public:
+    static void reCalcChecksum(uint16_t *payLoad, size_t len);
     void sendBufferBySeq(uint16_t seq);
 #ifdef server
     static void init(int fd);
@@ -149,6 +150,12 @@ public:
         PacketLength = reinterpret_cast<uint16_t*>(calloc(WINDOW_SIZE, sizeof(uint16_t)));
         FirstHeader = reinterpret_cast<uint16_t*>(calloc(WINDOW_SIZE, sizeof(uint16_t)));
         rawSocket = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+        int val = 1;
+        if (setsockopt(rawSocket, IPPROTO_IP, IP_HDRINCL, reinterpret_cast<const void *>(&val), sizeof(int)))
+        {
+            perror("setsockopt() error");
+            exit(-1);
+        }
         firstHead = DATA_LENGTH;
         if (rawSocket < 0) {
             perror("open raw socket");
@@ -193,6 +200,8 @@ public:
     void SendBuffer();
 
     void SendRawBuffer();
+
+    static uint16_t calcCheckSum(uint16_t *data, size_t len, const uint16_t *fakeHead);
 };
 
 #endif

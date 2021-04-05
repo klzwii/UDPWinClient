@@ -21,21 +21,51 @@ long long operator - (const timeval &a, const timeval &b) {
     return t;
 }
 
-void RDT::reCalcChecksum(uint16_t *payLoad, size_t len) {
-    auto *iph = (iphdr*)payLoad;
-    iph->check = 0;
+uint16_t RDT::calcCheckSum(uint16_t *data, size_t len, const uint16_t *fakeHead) {
     uint32_t cksum = 0;
-    while(len)
+    if (fakeHead != nullptr) {
+        for (int i = 0; i < 6; i ++) {
+            cksum += *(fakeHead + i);
+        }
+    }
+    while(len > 1)
     {
-        cksum += *(payLoad++);
+        cksum += *(data++);
         len -= 2;
+    }
+    if (len == 1) {
+        cksum += *(uint8_t*)data;
     }
     while (cksum >> 16) {
         uint16_t t = cksum >> 16;
         cksum &= 0x0000ffff;
         cksum += t;
     }
-    iph->check = ~cksum;
+    return cksum;
+}
+
+void RDT::reCalcChecksum(uint16_t *payLoad, size_t len) {
+    auto *iph = (iphdr*)payLoad;
+    uint16_t headLen = iph->ihl * 4;
+    std::cout << headLen << std::endl;
+    uint8_t fakeHead[12];
+    if (iph->protocol != IPPROTO_ICMP) {
+        *(uint32_t*)fakeHead = iph->saddr;
+        *(uint32_t*)(fakeHead + 4) = iph->daddr;
+        *(uint8_t*)(fakeHead + 8) = 0;
+        *(uint8_t*)(fakeHead + 9) = iph->protocol;
+        *(uint16_t*)(fakeHead + 10) = htobe16((uint16_t)(len - headLen));
+        if (iph->protocol == IPPROTO_TCP) {
+            *(payLoad + headLen/2 + 8) = 0;
+            *(payLoad + headLen/2 + 8) = ~calcCheckSum(payLoad + headLen/2, len - headLen, (uint16_t*)fakeHead);
+        }
+        if (iph->protocol == IPPROTO_UDP) {
+            *(payLoad + headLen/2 + 3) = 0;
+            *(payLoad + headLen/2 + 3) = ~calcCheckSum(payLoad + headLen/2, len - headLen, (uint16_t*)fakeHead);
+        }
+    }
+    iph->check = 0;
+    iph->check = ~(calcCheckSum(payLoad, len, nullptr));
 }
 
 // non thread safe
@@ -280,14 +310,6 @@ bool RDT::DumpData() {
     return flg;
 }
 
-void printIP(uint32_t netIP) {
-    auto *k = (uint8_t*)&netIP;
-    for (int i = 0; i <= 3; i ++) {
-        printf("%d.", (int)*(k+i));
-    }
-    printf("\n");
-}
-
 void RDT::SendRawBuffer() {
     if (rawOffset < sizeof(struct iphdr)) {
         return;
@@ -307,14 +329,12 @@ void RDT::SendRawBuffer() {
     tempSock.sin_family = AF_INET;
     tempSock.sin_addr.s_addr = iphdr->daddr;
     if (iphdr->protocol == IPPROTO_TCP) {
-        tempSock.sin_port = *(uint16_t *)(rawBuffer + 4 * (iphdr->ihl) + 2);
+        tempSock.sin_port = *(uint16_t *) (rawBuffer + 4 * (iphdr->ihl) + 2);
     }
-    std::cout << be16toh(tempSock.sin_port) << std::endl << be16toh(*(uint16_t *)(rawBuffer + 4 * (iphdr->ihl) + 2)) << std::endl;
+    std::cout << be16toh(tempSock.sin_port) << std::endl << be16toh(*(uint16_t *)(rawBuffer + 4 * (iphdr->ihl))) << std::endl;
     reCalcChecksum((uint16_t*)rawBuffer, sendLength);
     auto sendRet = sendto(rawSocket, rawBuffer, sendLength, 0, (sockaddr*)&tempSock, sizeof(sockaddr_in));
     std::cout << "send raw " << sendLength << (int)iphdr->ihl << std::endl;
-    printIP(iphdr->daddr);
-    printIP(iphdr->saddr);
     if (sendRet < 0) {
         perror("send raw");
     }
