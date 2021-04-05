@@ -4,8 +4,7 @@
 
 #ifndef UDPCOMMON_RDT_H
 #define UDPCOMMON_RDT_H
-#define client
-#include <stdint.h>
+#include <cstdint>
 #include <atomic>
 #include <malloc.h>
 #include <cstring>
@@ -14,12 +13,13 @@
 #include <thread>
 #include <random>
 #include <netinet/in.h>
+#include <unistd.h>
 
 class RDT {
 private:
     uint16_t RecvEnd;
     uint16_t RecvStart;
-    std::atomic_uint16_t SendWindowStart; // recv thread changes this variable and send thread also read this variable
+    std::atomic_uint16_t SendWindowStart{}; // recv thread changes this variable and send thread also read this variable
     uint32_t *ack;
     bool *finish;
 #ifdef server
@@ -29,15 +29,16 @@ private:
 #endif
     uint8_t **RecvBuffers;
     uint16_t SendWindowEnd;
-    uint16_t uuid;
+    uint16_t uuid = 0;
     uint8_t **sendBuffers;
-    uint8_t rawBuffer[2000];
+    uint8_t rawBuffer[2000]{};
     uint16_t rawOffset = 0;
     RSHelper **helpers;
     timeval *sendTime;
     timeval *recvTime;
 #ifdef client
     int sendFD;
+    std::atomic_bool threadExit{false};
     static void RecvThread(RDT *rdt);
 #endif
     uint8_t * buffer;
@@ -52,7 +53,7 @@ private:
     uint32_t RESEND_THRESHOLD;
     uint32_t RECOVER_THRESHOLD;
     uint32_t BUFFER_THRESHOLD;
-    std::atomic_int wg;
+    std::atomic_int wg{};
     in_addr_t fakeIP;
     int rawSocket;
     uint16_t *PacketLength;
@@ -62,6 +63,34 @@ public:
 #ifdef server
     static void init(int fd);
 #endif
+    ~RDT() {
+        for (int i = 0; i < WINDOW_SIZE; i ++) {
+            delete sendBuffers[i];
+        }
+        delete sendBuffers;
+        for (int i = 0; i < WINDOW_SIZE; i ++) {
+            delete RecvBuffers[i];
+        }
+        delete RecvBuffers;
+        delete ack;
+        for (int i = 0; i < THREAD_NUM; i ++) {
+            delete helpers[i];
+        }
+        delete helpers;
+        delete sendTime;
+        delete recvTime;
+        delete finish;
+        delete buffer;
+        delete PacketLength;
+#ifdef client
+        threadExit.store(false);
+        while (threadExit.load()) {
+            std::this_thread::yield();
+        }
+        close(sendFD);
+#endif
+        close(rawSocket);
+    }
 #ifdef client
     RDT(uint WINDOW_SIZE, uint BATCH_LENGTH, uint PACKET_SIZE, uint RS_LENGTH, in_addr_t SendAddr, in_port_t SendPort, uint32_t RECOVER_THRESHOLD, uint32_t RESEND_THRESHOLD, uint32_t BUFFER_THRESHOLD, in_addr_t fakeIP)
 #endif
@@ -157,6 +186,5 @@ public:
 
     void SendBuffer(uint8_t *data, uint16_t length);
 };
-
 
 #endif

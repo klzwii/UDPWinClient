@@ -138,6 +138,10 @@ void RDT::RecvThread(RDT* rdt) {
     while (true) {
         auto setCopy = fdSet;
         auto tvCopy = timeOut;
+        if (rdt->threadExit) {
+            rdt->threadExit.store(false);
+            return;
+        }
         int selectedFd = select(sendFD + 1, &setCopy, nullptr, nullptr, &tvCopy);
         if (FD_ISSET(sendFD, &setCopy)) {
             //todo recv data
